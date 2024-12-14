@@ -11,7 +11,7 @@ public interface ICommunityService
     public Task CreateCommunity(CreateCommunityDTO createCommunityDto, Guid userId);
     public Task<List<Guid>> GetIdMyCommunity(Guid? userId);
     public Task CreatePost(Guid communityId, CreatePostDTO createPostDto, Guid userId);
-    public Task<PostAndPaginationDTO> GetCommunityPosts(CommunityPostFilters query, Guid communityId, Guid userId);
+    public Task<PostAndPaginationDTO> GetCommunityPosts(CommunityPostFilters query, Guid communityId, Guid? userId);
     public Task<List<GetMyCommunitiesDTO>> GetMyCommunities(Guid userId);
     public Task<CommunityInfoDTO> GetCommunityInfo(Guid communityId);
     public Task<RoleDTO> GetRole(Guid userId, Guid id);

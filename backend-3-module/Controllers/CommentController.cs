@@ -12,12 +12,12 @@ namespace backend_3_module.Controllers;
 public class CommentController : ControllerBase
 {
     private readonly ICommentService _commentService;
-    private readonly TokenMiddlware _tokenMiddlwareHelper;
+    private readonly Token _tokenHelper;
 
-    public CommentController(ICommentService commentService, TokenMiddlware tokenMiddlwareHelper)
+    public CommentController(ICommentService commentService, Token tokenHelper)
     {
         _commentService = commentService;
-        _tokenMiddlwareHelper = tokenMiddlwareHelper;
+        _tokenHelper = tokenHelper;
     }
 
     [HttpGet("{id}/tree")]
@@ -28,7 +28,7 @@ public class CommentController : ControllerBase
     [ProducesResponseType(typeof(ErrorDTO), 500)]
     public async Task<List<CommentInfoDTO>> GetReplies(Guid id)
     {
-        var userId = _tokenMiddlwareHelper.GetUserIdFromToken();
+        var userId = _tokenHelper.GetUserIdFromToken();
         return await _commentService.GetAllNestedComments(id, await userId);
     }
 
@@ -40,7 +40,7 @@ public class CommentController : ControllerBase
     [ProducesResponseType(typeof(ErrorDTO), 500)]
     public async Task<IActionResult> AddComment(Guid id, [FromBody] CommentDTO commentDto)
     {
-        var userId = _tokenMiddlwareHelper.GetUserIdFromToken();
+        var userId = _tokenHelper.GetUserIdFromToken();
         await _commentService.AddComment(id, await userId, commentDto);
         return Ok();
     }
@@ -53,7 +53,7 @@ public class CommentController : ControllerBase
     [ProducesResponseType(typeof(ErrorDTO), 500)]
     public async Task<IActionResult> EditComment(Guid id, [FromBody] CommentContentDTO commentContentDto)
     {
-        var userId = _tokenMiddlwareHelper.GetUserIdFromToken();
+        var userId = _tokenHelper.GetUserIdFromToken();
         await _commentService.EditComment(id, await userId, commentContentDto);
         return Ok();
     }
@@ -66,7 +66,7 @@ public class CommentController : ControllerBase
     [ProducesResponseType(typeof(ErrorDTO), 500)]
     public async Task<IActionResult> DeleteComment(Guid id)
     {
-        var userId = _tokenMiddlwareHelper.GetUserIdFromToken();
+        var userId = _tokenHelper.GetUserIdFromToken();
         await _commentService.DeleteComment(id, await userId);
         return Ok();
     }

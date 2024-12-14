@@ -22,6 +22,7 @@ public class RegistrationDTO
     [Required]
     [EnumDataType(typeof(Gender), ErrorMessage = "Пол должен быть Male или Female.")]
     public Gender Gender { get; set; }
+
     [PhoneValidator(ErrorMessage = "Неправильный номер телефона.")]
-    public string PhoneNumber { get; set; }
+    public string? PhoneNumber { get; set; } = null;
 } 

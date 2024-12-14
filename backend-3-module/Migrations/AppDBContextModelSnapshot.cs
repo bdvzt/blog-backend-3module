@@ -83,9 +83,6 @@ namespace backend_3_module.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int>("SubscribersCount")
-                        .HasColumnType("integer");
-
                     b.HasKey("Id");
 
                     b.ToTable("Communities");
@@ -109,6 +106,38 @@ namespace backend_3_module.Migrations
                     b.ToTable("CommunityUsers");
                 });
 
+            modelBuilder.Entity("backend_3_module.Data.Entities.EmailNewPost", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("SentAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("Status")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("To")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("EmailNewPosts");
+                });
+
             modelBuilder.Entity("backend_3_module.Data.Entities.Post", b =>
                 {
                     b.Property<Guid>("Id")
@@ -125,9 +154,6 @@ namespace backend_3_module.Migrations
                     b.Property<Guid>("AuthorId")
                         .HasColumnType("uuid");
 
-                    b.Property<int>("CommentsCount")
-                        .HasColumnType("integer");
-
                     b.Property<Guid?>("CommunityId")
                         .HasColumnType("uuid");
 
@@ -141,14 +167,8 @@ namespace backend_3_module.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<bool>("HasLike")
-                        .HasColumnType("boolean");
-
                     b.Property<string>("Image")
                         .HasColumnType("text");
-
-                    b.Property<int>("Likes")
-                        .HasColumnType("integer");
 
                     b.Property<int>("ReadingTime")
                         .HasColumnType("integer");
@@ -225,9 +245,13 @@ namespace backend_3_module.Migrations
                     b.Property<int>("Gender")
                         .HasColumnType("integer");
 
-                    b.Property<string>("Password")
+                    b.Property<byte[]>("PasswordHash")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("bytea");
+
+                    b.Property<byte[]>("PasswordSalt")
+                        .IsRequired()
+                        .HasColumnType("bytea");
 
                     b.Property<string>("PhoneNumber")
                         .HasColumnType("text");

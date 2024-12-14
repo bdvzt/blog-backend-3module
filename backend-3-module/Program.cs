@@ -3,13 +3,16 @@ using backend_3_module.Data;
 using backend_3_module.Data.DataBases;
 using Microsoft.EntityFrameworkCore;
 using backend_3_module.Helpers;
+using backend_3_module.Jobs;
 using backend_3_module.Middlewares;
 using backend_3_module.Models.Address;
 using backend_3_module.Services;
 using backend_3_module.Services.IServices;
+using Email;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Quartz;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<BlogDbContext>(options =>
@@ -19,9 +22,32 @@ builder.Services.AddDbContext<AddressDbContext>(options =>
 builder.Services.AddSingleton(
     new RedisDbContext(builder.Configuration.GetConnectionString("Redis")));
 
-builder.Services.AddScoped<DataSeeder>();
+var emailConfig = builder.Configuration
+    .GetSection("EmailConfiguration")
+    .Get<EmailConfiguration>();
+builder.Services.AddSingleton(emailConfig);
 
-// builder.Services.Configure<JWTSettings>(builder.Configuration.GetSection("JWTSettings"));
+builder.Services.AddQuartz(q =>
+{
+    q.UseMicrosoftDependencyInjectionJobFactory();
+    q.AddJob<EmailJob>(opts =>
+        opts.WithIdentity("EmailJob")
+            .StoreDurably()
+    );
+    q.AddTrigger(opts => opts
+        .ForJob("EmailJob")
+        .WithIdentity("EmailsTrigger")
+        .StartNow()
+        .WithSimpleSchedule(x => x
+            .WithIntervalInSeconds(20)
+            .RepeatForever())
+    );
+});
+
+builder.Services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
+builder.Services.AddControllers();
+
+builder.Services.AddScoped<DataSeeder>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ICommunityService, CommunityService>();
 builder.Services.AddScoped<ITagService, TagService>();
@@ -29,7 +55,8 @@ builder.Services.AddScoped<IPostService, PostService>();
 builder.Services.AddScoped<IAuthorService, AuthorService>();
 builder.Services.AddScoped<ICommentService, CommentService>();
 builder.Services.AddScoped<IAddressesService, AddressesService>();
-builder.Services.AddSingleton<TokenMiddlware>();
+builder.Services.AddScoped<IEmailSender, EmailSender>();
+builder.Services.AddSingleton<Token>();
 builder.Services.AddScoped<AddressExsists>();
 builder.Services.AddHttpContextAccessor();
 
@@ -65,10 +92,10 @@ builder.Services.AddSwaggerGen(options =>
             "Enter TOKEN here",
         Name = "Authorization",
         In = ParameterLocation.Header,
-        Type = SecuritySchemeType.Http, 
+        Type = SecuritySchemeType.Http,
         Scheme = "bearer"
     });
-    
+
     options.AddSecurityRequirement(new OpenApiSecurityRequirement()
     {
         {
@@ -93,18 +120,19 @@ builder.Services.AddControllers();
 
 var app = builder.Build();
 
-using var scope = app.Services.CreateScope();
-var seeder = scope.ServiceProvider.GetRequiredService<DataSeeder>();
-await seeder.Seed();
-
-var dbContext = scope.ServiceProvider.GetRequiredService<BlogDbContext>();
-dbContext.Database.Migrate();
-
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+using var scopeService = app.Services.CreateScope();
+var dbContext = scopeService.ServiceProvider.GetRequiredService<BlogDbContext>();
+dbContext.Database.Migrate();
+
+using var scope = app.Services.CreateScope();
+var seeder = scope.ServiceProvider.GetRequiredService<DataSeeder>();
+await seeder.Seed();
 
 app.UseMiddleware<ExeptionHandlingMiddleWare>();
 

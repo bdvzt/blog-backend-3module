@@ -13,12 +13,9 @@ public class Post
     public Guid? CommunityId { get; set; }
     public string? CommunityName { get; set; }
     public Guid? AddressId { get; set; }
-    public int Likes { get; set; }
-    public bool HasLike { get; set; }
-    public int CommentsCount { get; set; }
     public User User { get; set; }
     public Community Community { get; set; }
     public ICollection<Comment> Comments { get; set; } = new List<Comment>();
     public ICollection<UserLikes> UserLikes { get; set; } = new List<UserLikes>();
-    public ICollection<PostTags>? PostTags { get; set; } = new List<PostTags>();
+    public ICollection<PostTags> PostTags { get; set; } = new List<PostTags>();
 }

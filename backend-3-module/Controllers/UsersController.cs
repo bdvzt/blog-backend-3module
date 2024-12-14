@@ -23,12 +23,12 @@ namespace backend_3_module.Controllers;
 public class UsersController : ControllerBase
 {
     private readonly IUserService _userService;
-    private readonly TokenMiddlware _tokenMiddlwareHelper;
+    private readonly Token _tokenHelper;
 
-    public UsersController(IUserService userService, TokenMiddlware tokenMiddlwareHelper)
+    public UsersController(IUserService userService, Token tokenHelper)
     {
         _userService = userService;
-        _tokenMiddlwareHelper = tokenMiddlwareHelper;
+        _tokenHelper = tokenHelper;
     }
 
     [HttpPost("register")]
@@ -49,11 +49,11 @@ public class UsersController : ControllerBase
         return await _userService.Login(loginDto);
     }
 
-    [HttpGet("logout")] //TODO logout
+    [HttpGet("logout")] 
     [Authorize]
     public async Task<IActionResult> Logout()
     {
-        var token = _tokenMiddlwareHelper.GetToken();
+        var token = _tokenHelper.GetToken();
         await _userService.Logout(token);
         return Ok();
     }
@@ -66,7 +66,7 @@ public class UsersController : ControllerBase
     [ProducesResponseType(typeof(ErrorDTO), 500)]
     public async Task<UserDTO> GetProfile()
     {
-        var userId = _tokenMiddlwareHelper.GetUserIdFromToken();
+        var userId = _tokenHelper.GetUserIdFromToken();
         return await _userService.GetProfile(await userId);
     }
 
@@ -78,7 +78,7 @@ public class UsersController : ControllerBase
     [ProducesResponseType(typeof(ErrorDTO), 500)]
     public async Task<IActionResult> EditProfile([FromBody] EditUserDTO editUserDto)
     {
-        var userId = _tokenMiddlwareHelper.GetUserIdFromToken();
+        var userId = _tokenHelper.GetUserIdFromToken();
         await _userService.EditProfile(await userId, editUserDto);
         return Ok();
     }

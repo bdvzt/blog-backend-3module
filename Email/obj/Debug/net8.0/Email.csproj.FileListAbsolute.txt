@@ -1,0 +1,12 @@
+/Users/bdvzt/Desktop/coola/backend-3-module/Email/bin/Debug/net8.0/Email.deps.json
+/Users/bdvzt/Desktop/coola/backend-3-module/Email/bin/Debug/net8.0/Email.dll
+/Users/bdvzt/Desktop/coola/backend-3-module/Email/bin/Debug/net8.0/Email.pdb
+/Users/bdvzt/Desktop/coola/backend-3-module/Email/obj/Debug/net8.0/Email.csproj.AssemblyReference.cache
+/Users/bdvzt/Desktop/coola/backend-3-module/Email/obj/Debug/net8.0/Email.GeneratedMSBuildEditorConfig.editorconfig
+/Users/bdvzt/Desktop/coola/backend-3-module/Email/obj/Debug/net8.0/Email.AssemblyInfoInputs.cache
+/Users/bdvzt/Desktop/coola/backend-3-module/Email/obj/Debug/net8.0/Email.AssemblyInfo.cs
+/Users/bdvzt/Desktop/coola/backend-3-module/Email/obj/Debug/net8.0/Email.csproj.CoreCompileInputs.cache
+/Users/bdvzt/Desktop/coola/backend-3-module/Email/obj/Debug/net8.0/Email.dll
+/Users/bdvzt/Desktop/coola/backend-3-module/Email/obj/Debug/net8.0/refint/Email.dll
+/Users/bdvzt/Desktop/coola/backend-3-module/Email/obj/Debug/net8.0/Email.pdb
+/Users/bdvzt/Desktop/coola/backend-3-module/Email/obj/Debug/net8.0/ref/Email.dll

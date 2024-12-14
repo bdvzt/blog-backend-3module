@@ -13,12 +13,12 @@ namespace backend_3_module.Controllers;
 public class PostController : ControllerBase
 {
     private readonly IPostService _postService;
-    private readonly TokenMiddlware _tokenMiddlwareHelper;
+    private readonly Token _tokenHelper;
 
-    public PostController(IPostService postService, TokenMiddlware tokenMiddlwareHelper)
+    public PostController(IPostService postService, Token tokenHelper)
     {
         _postService = postService;
-        _tokenMiddlwareHelper = tokenMiddlwareHelper;
+        _tokenHelper = tokenHelper;
     }
 
     [HttpGet()]
@@ -31,7 +31,7 @@ public class PostController : ControllerBase
 
         try
         {
-            userId = await _tokenMiddlwareHelper.GetUserIdFromToken();
+            userId = await _tokenHelper.GetUserIdFromToken();
         }
         catch (UnauthorizedAccessException)
         {
@@ -48,7 +48,7 @@ public class PostController : ControllerBase
     [ProducesResponseType(typeof(ErrorDTO), 500)]
     public async Task<PostInfoDTO> GetPostInfo(Guid id)
     {
-        var userId = _tokenMiddlwareHelper.GetUserIdFromToken();
+        var userId = _tokenHelper.GetUserIdFromToken();
         return await _postService.GetPostInfo(id, await userId);
     }
 
@@ -60,7 +60,7 @@ public class PostController : ControllerBase
     [ProducesResponseType(typeof(ErrorDTO), 500)]
     public async Task<IActionResult> CreatePost([FromBody] CreatePostDTO postDto)
     {
-        var userId = _tokenMiddlwareHelper.GetUserIdFromToken();
+        var userId = _tokenHelper.GetUserIdFromToken();
         await _postService.CreatePost(postDto, await userId);
         return Ok();
     }
@@ -73,7 +73,7 @@ public class PostController : ControllerBase
     [ProducesResponseType(typeof(ErrorDTO), 500)]
     public async Task<IActionResult> LikePost(Guid postId)
     {
-        var userId = _tokenMiddlwareHelper.GetUserIdFromToken();
+        var userId = _tokenHelper.GetUserIdFromToken();
         await _postService.LikePost(postId, await userId);
         return Ok();
     }
@@ -86,7 +86,7 @@ public class PostController : ControllerBase
     [ProducesResponseType(typeof(ErrorDTO), 500)]
     public async Task<IActionResult> UnlikePost(Guid postId)
     {
-        var userId = _tokenMiddlwareHelper.GetUserIdFromToken();
+        var userId = _tokenHelper.GetUserIdFromToken();
         await _postService.UnlikePost(postId, await userId);
         return Ok();
     }

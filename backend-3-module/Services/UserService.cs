@@ -21,13 +21,13 @@ public class UserService : IUserService
 {
     private readonly BlogDbContext _dbContext;
     private readonly RedisDbContext _redisDbContext;
-    private readonly TokenMiddlware _tokenMiddlwareHelper;
+    private readonly Token _tokenHelper;
 
-    public UserService(BlogDbContext dbContext, RedisDbContext redisDbContext, TokenMiddlware tokenMiddlwareHelper)
+    public UserService(BlogDbContext dbContext, RedisDbContext redisDbContext, Token tokenHelper)
     {
         _dbContext = dbContext;
         _redisDbContext = redisDbContext;
-        _tokenMiddlwareHelper = tokenMiddlwareHelper;
+        _tokenHelper = tokenHelper;
     }
 
     public async Task<bool> IsUniqueEmailAsync(string email)
@@ -40,6 +40,9 @@ public class UserService : IUserService
         if (!await IsUniqueEmailAsync(registrationDto.Email))
             throw new BadRequestException("Такой Email уже существует.");
 
+        byte[] passwordHash, passwordSalt;
+        PasswordHasher.CreatePasswordHash(registrationDto.Password, out passwordHash, out passwordSalt);
+
         var newUser = new User
         {
             Id = Guid.NewGuid(),
@@ -49,12 +52,13 @@ public class UserService : IUserService
             Gender = registrationDto.Gender,
             Email = registrationDto.Email,
             PhoneNumber = registrationDto.PhoneNumber,
-            Password = registrationDto.Password // TODO потом хэширование сделаю
+            PasswordHash = passwordHash,
+            PasswordSalt = passwordSalt
         };
         _dbContext.Users.Add(newUser);
         await _dbContext.SaveChangesAsync();
 
-        var token = _tokenMiddlwareHelper.GenerateToken(newUser);
+        var token = _tokenHelper.GenerateToken(newUser);
 
         return new TokenResponseDTO { Token = token };
     }
@@ -69,12 +73,12 @@ public class UserService : IUserService
         var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Email == loginDto.Email);
 
         if (user == null)
-            throw new KeyNotFoundException("Пользователь не найден.");
+            throw new BadRequestException("Пользователь не найден.");
 
-        if (user.Password != loginDto.Password)
+        if (!PasswordHasher.VerifyPasswordHash(loginDto.Password, user.PasswordHash, user.PasswordSalt))
             throw new BadRequestException($"Неверный пароль для {loginDto.Email}");
 
-        var token = _tokenMiddlwareHelper.GenerateToken(user);
+        var token = _tokenHelper.GenerateToken(user);
 
         return new TokenResponseDTO { Token = token };
     }

@@ -16,6 +16,7 @@ public class BlogDbContext : DbContext
     public DbSet<Comment> Comments { get; set; }
     public DbSet<CommunityUser> CommunityUsers { get; set; }
     public DbSet<UserLikes> UserLikes { get; set; }
+    public DbSet<EmailNewPost> EmailNewPosts { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

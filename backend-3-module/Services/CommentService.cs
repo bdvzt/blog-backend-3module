@@ -180,6 +180,9 @@ public class CommentService : ICommentService
 
         if (comment == null)
             throw new KeyNotFoundException("Комментарий не найден");
+        
+        if (comment.Content == null)
+            throw new BadRequestException("Нельзя удалить удаленный комментарий.");
 
         if (comment.AuthorId != userId &&
             !comment.Post.Community.CommunityUsers.Any(cu => cu.UserId == userId && cu.Role == Role.Администратор))

@@ -17,5 +17,7 @@ public class CreatePostDTO
     public int ReadingTime { get; set; }
     public string? Image { get; set; }
     public Guid? AddressId { get; set; }
-    public List<Guid>? Tags { get; set; }
+    [Required]
+    [MinLength(1)]
+    public List<Guid> Tags { get; set; }
 }

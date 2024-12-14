@@ -24,5 +24,5 @@ public class EditUserDTO
     public string Email { get; set; }
 
     [PhoneValidator(ErrorMessage = "Неправильный номер телефона.")]
-    public string PhoneNumber { get; set; }
+    public string? PhoneNumber { get; set; } = null;
 }

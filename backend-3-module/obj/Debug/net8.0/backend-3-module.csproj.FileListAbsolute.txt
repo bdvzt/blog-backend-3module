@@ -117,3 +117,15 @@
 /Users/bdvzt/Desktop/coola/backend-3-module/backend-3-module/bin/Debug/net8.0/JWT.dll
 /Users/bdvzt/Desktop/coola/backend-3-module/backend-3-module/bin/Debug/net8.0/Pipelines.Sockets.Unofficial.dll
 /Users/bdvzt/Desktop/coola/backend-3-module/backend-3-module/bin/Debug/net8.0/StackExchange.Redis.dll
+/Users/bdvzt/Desktop/coola/backend-3-module/backend-3-module/bin/Debug/net8.0/BouncyCastle.Cryptography.dll
+/Users/bdvzt/Desktop/coola/backend-3-module/backend-3-module/bin/Debug/net8.0/MailKit.dll
+/Users/bdvzt/Desktop/coola/backend-3-module/backend-3-module/bin/Debug/net8.0/MimeKit.dll
+/Users/bdvzt/Desktop/coola/backend-3-module/backend-3-module/bin/Debug/net8.0/System.Formats.Asn1.dll
+/Users/bdvzt/Desktop/coola/backend-3-module/backend-3-module/bin/Debug/net8.0/System.Security.Cryptography.Pkcs.dll
+/Users/bdvzt/Desktop/coola/backend-3-module/backend-3-module/bin/Debug/net8.0/runtimes/win/lib/net8.0/System.Security.Cryptography.Pkcs.dll
+/Users/bdvzt/Desktop/coola/backend-3-module/backend-3-module/bin/Debug/net8.0/Email.dll
+/Users/bdvzt/Desktop/coola/backend-3-module/backend-3-module/bin/Debug/net8.0/Email.pdb
+/Users/bdvzt/Desktop/coola/backend-3-module/backend-3-module/bin/Debug/net8.0/Quartz.dll
+/Users/bdvzt/Desktop/coola/backend-3-module/backend-3-module/bin/Debug/net8.0/Quartz.Extensions.DependencyInjection.dll
+/Users/bdvzt/Desktop/coola/backend-3-module/backend-3-module/bin/Debug/net8.0/Quartz.Extensions.Hosting.dll
+/Users/bdvzt/Desktop/coola/backend-3-module/backend-3-module/bin/Debug/net8.0/Quartz.Serialization.Json.dll

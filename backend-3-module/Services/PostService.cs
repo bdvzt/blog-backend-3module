@@ -8,6 +8,7 @@ using backend_3_module.Data.Queries;
 using backend_3_module.Helpers;
 using backend_3_module.Models.Address;
 using backend_3_module.Services.IServices;
+using Email;
 using Microsoft.EntityFrameworkCore;
 using KeyNotFoundException = backend_3_module.Data.Errors.KeyNotFoundException;
 
@@ -38,16 +39,16 @@ public class PostService : IPostService
 
         if (!userId.HasValue)
         {
-            posts = posts.Where(p => 
-                p.CommunityId == null || 
-                !p.Community.IsClosed);  
+            posts = posts.Where(p =>
+                p.CommunityId == null ||
+                !p.Community.IsClosed);
         }
         else
         {
             posts = posts.Where(p =>
-                p.CommunityId == null || 
-                !p.Community.IsClosed || 
-                p.Community.CommunityUsers.Any(cu => cu.UserId == userId.Value)); 
+                p.CommunityId == null ||
+                !p.Community.IsClosed ||
+                p.Community.CommunityUsers.Any(cu => cu.UserId == userId.Value));
         }
 
         if (query.PageNumber <= 0)
@@ -55,8 +56,6 @@ public class PostService : IPostService
 
         if (query.PageSize is <= 0 or > 100)
             throw new BadRequestException("Количество постов должно быть в диапазоне от 1 до 100.");
-
-        //todo AsQueryable понять
 
         if (!string.IsNullOrWhiteSpace(query.Author))
             posts = posts.Where(p => p.Author.Contains(query.Author));
@@ -82,8 +81,8 @@ public class PostService : IPostService
             {
                 Sorting.CreateAsc => posts.OrderBy(p => p.CreateTime),
                 Sorting.CreateDesc => posts.OrderByDescending(p => p.CreateTime),
-                Sorting.LikeAsc => posts.OrderBy(p => p.Likes),
-                Sorting.LikeDesc => posts.OrderByDescending(p => p.Likes),
+                Sorting.LikeAsc => posts.OrderBy(p => p.UserLikes.Count),
+                Sorting.LikeDesc => posts.OrderByDescending(p => p.UserLikes.Count),
                 _ => posts
             };
         }
@@ -92,9 +91,12 @@ public class PostService : IPostService
             posts = posts.OrderByDescending(p => p.CreateTime);
         }
 
-        var totalCountAsync = await posts.CountAsync();
+        var totalCountAsync = Math.Ceiling((await posts.CountAsync() / (double)query.PageSize!));
         var skipNumber = (query.PageNumber - 1) * query.PageSize;
         posts = posts.Skip((int)skipNumber!).Take((int)query.PageSize!);
+
+        if (totalCountAsync < query.PageNumber)
+            throw new BadRequestException("Номер страницы не существует");
 
         var postDtOs = await posts
             .Select(p => new PostDTO
@@ -110,7 +112,7 @@ public class PostService : IPostService
                 CommunityId = p.CommunityId,
                 CommunityName = p.CommunityName,
                 AddressId = p.AddressId,
-                Likes = p.Likes,
+                Likes = p.UserLikes.Count,
                 HasLike = p.UserLikes.Any(ul => ul.UserId == userId),
                 CommentsCount = p.Comments.Count,
                 Tags = p.PostTags!.Select(pt => new TagInfoDTO
@@ -164,11 +166,8 @@ public class PostService : IPostService
             Author = user.FullName,
             CommunityId = null,
             CommunityName = null,
-            AddressId = null,
-            Likes = 0,
-            HasLike = false,
+            AddressId = postDto.AddressId,
             User = user,
-            CommentsCount = 0,
             Comments = new List<Comment>()
         };
 
@@ -213,7 +212,7 @@ public class PostService : IPostService
             CommunityId = post.CommunityId,
             CommunityName = post.CommunityName,
             AddressId = post.AddressId,
-            Likes = post.Likes,
+            Likes = post.UserLikes.Count,
             HasLike = hasLike,
             CommentsCount = post.Comments.Count,
             Comments = post.Comments
@@ -286,8 +285,6 @@ public class PostService : IPostService
             PostId = postId
         };
 
-        post.Likes += 1;
-        _dbContext.Update(post);
         await _dbContext.UserLikes.AddAsync(userLike);
         await _dbContext.SaveChangesAsync();
     }
@@ -335,8 +332,6 @@ public class PostService : IPostService
         if (userLike == null)
             throw new BadRequestException("Пользователь не лайкал этот пост");
 
-        post.Likes -= 1;
-        _dbContext.Update(post);
         _dbContext.UserLikes.Remove(userLike);
         await _dbContext.SaveChangesAsync();
     }

@@ -1,6 +1,7 @@
 using backend_3_module.Data;
 using backend_3_module.Data.DTO.Tag;
 using backend_3_module.Data.Entities;
+using backend_3_module.Data.Errors;
 using Microsoft.EntityFrameworkCore;
 
 namespace backend_3_module.Services.IServices;
@@ -30,6 +31,9 @@ public class TagService : ITagService
 
     public async Task CreateTag(TagDTO tagDto)
     {
+        if (await _dbContext.Tags.AnyAsync(t => t.Name == tagDto.Name))
+            throw new BadRequestException("Тег с таким названием уже существует.");
+        
         var newTag = new Tag
         {
             Id = Guid.NewGuid(),

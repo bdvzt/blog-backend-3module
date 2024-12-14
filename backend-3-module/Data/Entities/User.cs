@@ -8,9 +8,8 @@ public class User
     public DateTime BirthDate { get; set; }
     public Gender Gender { get; set; }
     public string Email { get; set; }
-    public string Password { get; set; }
-    // public byte[] PasswordHash { get; set; } // todo хэширование пароля
-    // public byte[] PasswordSalt { get; set; }
+    public byte[] PasswordHash { get; set; }
+    public byte[] PasswordSalt { get; set; }
     public string? PhoneNumber { get; set; }
     public ICollection<CommunityUser> CommunityUsers { get; set; } = new List<CommunityUser>();
     public ICollection<Post> MyPosts { get; set; } = new List<Post>();

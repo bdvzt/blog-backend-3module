@@ -19,6 +19,6 @@ public class PostInfoDTO
     public int Likes { get; set; }
     public bool HasLike { get; set; }
     public int CommentsCount { get; set; }
-    public List<TagInfoDTO>? Tags { get; set; }
+    public List<TagInfoDTO> Tags { get; set; }
     public List<CommentInfoDTO> Comments { get; set; }
 }

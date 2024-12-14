@@ -24,7 +24,7 @@ public class BirthdayValidator : ValidationAttribute
 
         if (birthDate.Year < minYear)
         {
-            return new ValidationResult($"Дата рождения не может быть старше, чем {minYear} год.");
+            return new ValidationResult($"Дата рождения не может быть раньше, чем {minYear} год.");
         }
 
         if (birthDate > maxBirthDate)

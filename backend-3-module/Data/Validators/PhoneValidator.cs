@@ -7,11 +7,11 @@ public class PhoneValidator : ValidationAttribute
 {
     private const string PhoneNumber = @"^((8|\+7|7)[\- ]?\(?\d{3}\)?[\- ]?[\d\- ]{0,4})[\d\- ]{7}$";
 
-    protected override ValidationResult IsValid(object value, ValidationContext validationContext)
+    protected override ValidationResult? IsValid(object value, ValidationContext validationContext)
     {
-        if (value == null)
+        if (value == null || string.IsNullOrWhiteSpace(value.ToString()))
         {
-            return new ValidationResult("Номер телефона обязателен");
+            return ValidationResult.Success;
         }
 
         var phoneNumber = value.ToString();

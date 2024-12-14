@@ -8,6 +8,7 @@ using backend_3_module.Data.Errors;
 using backend_3_module.Data.Queries;
 using backend_3_module.Helpers;
 using backend_3_module.Services.IServices;
+using Email;
 using Microsoft.EntityFrameworkCore;
 using ForbiddenException = backend_3_module.Data.Errors.ForbiddenException;
 using KeyNotFoundException = backend_3_module.Data.Errors.KeyNotFoundException;
@@ -18,11 +19,13 @@ public class CommunityService : ICommunityService
 {
     private readonly BlogDbContext _dbContext;
     private readonly AddressExsists _addressExsists;
+    private readonly IEmailSender _emailSender;
 
-    public CommunityService(BlogDbContext dbContext, AddressExsists addressExsists)
+    public CommunityService(BlogDbContext dbContext, AddressExsists addressExsists, IEmailSender emailSender)
     {
         _dbContext = dbContext;
         _addressExsists = addressExsists;
+        _emailSender = emailSender;
     }
 
     public async Task<List<GetCommunityDTO>> GetCommunities()
@@ -47,8 +50,8 @@ public class CommunityService : ICommunityService
         if (!await _dbContext.Users.AnyAsync(u => u.Id == userId))
             throw new KeyNotFoundException($"Пользователь с id {userId} не найден.");
 
-        if (await _dbContext.Communities.AnyAsync(c => c.Name == createCommunityDto.Name))
-            throw new BadRequestException("Сообщество с таким именем уже существует.");
+        // if (await _dbContext.Communities.AnyAsync(c => c.Name == createCommunityDto.Name))
+        //     throw new BadRequestException("Сообщество с таким именем уже существует.");
 
         await using var transaction = await _dbContext.Database.BeginTransactionAsync();
         try
@@ -59,8 +62,7 @@ public class CommunityService : ICommunityService
                 Description = createCommunityDto.Description,
                 IsClosed = createCommunityDto.IsClosed,
                 CreateTime = DateTime.UtcNow,
-                Id = Guid.NewGuid(),
-                SubscribersCount = 0
+                Id = Guid.NewGuid()
             };
 
             var communityUser = new CommunityUser
@@ -119,7 +121,7 @@ public class CommunityService : ICommunityService
             Name = community.Name,
             Description = community.Description,
             IsClosed = community.IsClosed,
-            SubscribersCount = community.SubscribersCount,
+            SubscribersCount = community.CommunityUsers.Count(),
             Administrators = community.CommunityUsers
                 .Where(cu => cu.Role == Role.Администратор)
                 .Select(cu => new UserDTO()
@@ -138,9 +140,9 @@ public class CommunityService : ICommunityService
     }
 
     public async Task<PostAndPaginationDTO> GetCommunityPosts(CommunityPostFilters query, Guid communityId,
-        Guid userId)
+        Guid? userId)
     {
-        if (!await _dbContext.Users.AnyAsync(u => u.Id == userId))
+        if (userId.HasValue && !await _dbContext.Users.AnyAsync(u => u.Id == userId.Value))
             throw new KeyNotFoundException($"Пользователь с id {userId} не найден.");
 
         var community = await _dbContext.Communities
@@ -154,7 +156,7 @@ public class CommunityService : ICommunityService
         {
             var isAdminOrSubscriber = community.CommunityUsers
                 .Any(cu => cu.UserId == userId);
-            if (!isAdminOrSubscriber)
+            if (!userId.HasValue || !isAdminOrSubscriber)
                 throw new ForbiddenException(
                     "Просматривать посты могут только администратор и подписчики данного сообщества");
         }
@@ -176,8 +178,8 @@ public class CommunityService : ICommunityService
             {
                 Sorting.CreateAsc => posts.OrderBy(p => p.CreateTime),
                 Sorting.CreateDesc => posts.OrderByDescending(p => p.CreateTime),
-                Sorting.LikeAsc => posts.OrderBy(p => p.Likes),
-                Sorting.LikeDesc => posts.OrderByDescending(p => p.Likes),
+                Sorting.LikeAsc => posts.OrderBy(p => p.UserLikes.Count),
+                Sorting.LikeDesc => posts.OrderByDescending(p => p.UserLikes.Count),
                 _ => posts
             };
         }
@@ -186,9 +188,12 @@ public class CommunityService : ICommunityService
             posts = posts.OrderByDescending(p => p.CreateTime);
         }
 
-        var totalCountAsync = await posts.CountAsync();
+        var totalCountAsync = Math.Ceiling((await posts.CountAsync() / (double)query.PageSize!));
         var skipNumber = (query.PageNumber - 1) * query.PageSize;
         posts = posts.Skip((int)skipNumber!).Take((int)query.PageSize!);
+
+        if (totalCountAsync < query.PageNumber)
+            throw new BadRequestException("Номер страницы не существует");
 
         var postDtOs = await posts
             .Select(p => new PostDTO
@@ -204,7 +209,7 @@ public class CommunityService : ICommunityService
                 CommunityId = p.CommunityId,
                 CommunityName = p.CommunityName,
                 AddressId = p.AddressId,
-                Likes = p.Likes,
+                Likes = p.UserLikes.Count,
                 HasLike = p.UserLikes.Any(ul => ul.UserId == userId),
                 CommentsCount = p.Comments.Count,
                 Tags = p.PostTags!.Select(pt => new TagInfoDTO
@@ -273,9 +278,6 @@ public class CommunityService : ICommunityService
 
         await _dbContext.CommunityUsers.AddAsync(communityUser);
         await _dbContext.SaveChangesAsync();
-        community.SubscribersCount = await _dbContext.CommunityUsers
-            .CountAsync(cu => cu.CommunityId == communityId);
-        await _dbContext.SaveChangesAsync();
     }
 
     public async Task UnsubscribeFromCommunity(Guid userId, Guid communityId)
@@ -308,9 +310,6 @@ public class CommunityService : ICommunityService
         if (communityUser != null)
             _dbContext.CommunityUsers.Remove(communityUser);
         await _dbContext.SaveChangesAsync();
-        community.SubscribersCount = await _dbContext.CommunityUsers
-            .CountAsync(cu => cu.CommunityId == communityId);
-        await _dbContext.SaveChangesAsync();
     }
 
     public async Task CreatePost(Guid communityId, CreatePostDTO createPostDto, Guid userId)
@@ -342,6 +341,11 @@ public class CommunityService : ICommunityService
             !await _addressExsists.AddressExistsAsync(createPostDto.AddressId.Value))
             throw new KeyNotFoundException($"Адрес с uuid {createPostDto.AddressId} не найден.");
 
+        var subscribersEmails = await _dbContext.CommunityUsers
+            .Where(cu => cu.CommunityId == communityId)
+            .Select(cu => cu.User.Email)
+            .ToListAsync();
+
         var newPost = new Post
         {
             Id = Guid.NewGuid(),
@@ -354,11 +358,8 @@ public class CommunityService : ICommunityService
             Author = user.FullName,
             CommunityId = communityId,
             CommunityName = community.Name,
-            AddressId = null,
-            Likes = 0,
-            HasLike = false,
+            AddressId = createPostDto.AddressId,
             User = user,
-            CommentsCount = 0,
             Comments = new List<Comment>()
         };
 
@@ -369,6 +370,20 @@ public class CommunityService : ICommunityService
         }).ToList();
 
         await _dbContext.Posts.AddAsync(newPost);
+
+        foreach (var email in subscribersEmails)
+        {
+            var newEmail = new EmailNewPost
+            {
+                To = email,
+                Subject = $"Новый пост в {community.Name}",
+                Content = $"Вышел новый пост в сообществе {community.Name}:" +
+                          $"\n{createPostDto.Description}",
+                Status = false
+            };
+            await _dbContext.EmailNewPosts.AddAsync(newEmail);
+        }
+
         await _dbContext.SaveChangesAsync();
     }
 

@@ -14,12 +14,12 @@ namespace backend_3_module.Controllers;
 public class CommunityController : ControllerBase
 {
     private readonly ICommunityService _communityService;
-    private readonly TokenMiddlware _tokenMiddlwareHelper;
+    private readonly Token _tokenHelper;
 
-    public CommunityController(ICommunityService communityService, TokenMiddlware tokenMiddlwareHelper)
+    public CommunityController(ICommunityService communityService, Token tokenHelper)
     {
         _communityService = communityService;
-        _tokenMiddlwareHelper = tokenMiddlwareHelper;
+        _tokenHelper = tokenHelper;
     }
 
     [HttpGet]
@@ -39,7 +39,7 @@ public class CommunityController : ControllerBase
     [ProducesResponseType(typeof(ErrorDTO), 500)]
     public async Task<IActionResult> CreateCommunity([FromBody] CreateCommunityDTO community)
     {
-        var userId = _tokenMiddlwareHelper.GetUserIdFromToken();
+        var userId = _tokenHelper.GetUserIdFromToken();
         await _communityService.CreateCommunity(community, await userId);
         return Ok();
     }
@@ -52,7 +52,7 @@ public class CommunityController : ControllerBase
     [ProducesResponseType(typeof(ErrorDTO), 500)]
     public async Task<List<GetMyCommunitiesDTO>> GetMyCommunities()
     {
-        var userId = _tokenMiddlwareHelper.GetUserIdFromToken();
+        var userId = _tokenHelper.GetUserIdFromToken();
         return await _communityService.GetMyCommunities(await userId);
     }
 
@@ -66,15 +66,22 @@ public class CommunityController : ControllerBase
     }
 
     [HttpGet("{id}/post")]
-    [Authorize]
     [ProducesResponseType(typeof(PostAndPaginationDTO), 200)]
     [ProducesResponseType(typeof(ErrorDTO), 400)]
-    [ProducesResponseType(typeof(ErrorDTO), 401)]
     [ProducesResponseType(typeof(ErrorDTO), 500)]
     public async Task<PostAndPaginationDTO> GetCommunityPosts([FromQuery] CommunityPostFilters query, Guid id)
     {
-        var userId = _tokenMiddlwareHelper.GetUserIdFromToken();
-        return await _communityService.GetCommunityPosts(query, id, await userId);
+        Guid? userId = null;
+
+        try
+        {
+            userId = await _tokenHelper.GetUserIdFromToken();
+        }
+        catch (UnauthorizedAccessException)
+        {
+        }
+
+        return await _communityService.GetCommunityPosts(query, id, userId);
     }
 
     [HttpPost("{id}/post")]
@@ -85,7 +92,7 @@ public class CommunityController : ControllerBase
     [ProducesResponseType(typeof(ErrorDTO), 500)]
     public async Task<IActionResult> CreatePost(Guid id, [FromBody] CreatePostDTO createPostDto)
     {
-        var userId = _tokenMiddlwareHelper.GetUserIdFromToken();
+        var userId = _tokenHelper.GetUserIdFromToken();
         await _communityService.CreatePost(id, createPostDto, await userId);
         return Ok();
     }
@@ -98,7 +105,7 @@ public class CommunityController : ControllerBase
     [ProducesResponseType(typeof(ErrorDTO), 500)]
     public async Task<RoleDTO> GetRole(Guid id)
     {
-        var userId = _tokenMiddlwareHelper.GetUserIdFromToken(); 
+        var userId = _tokenHelper.GetUserIdFromToken(); 
         return await _communityService.GetRole(await userId, id);
     }
 
@@ -110,7 +117,7 @@ public class CommunityController : ControllerBase
     [ProducesResponseType(typeof(ErrorDTO), 500)]
     public async Task<IActionResult> Subcribe(Guid id)
     {
-        var userId = _tokenMiddlwareHelper.GetUserIdFromToken();
+        var userId = _tokenHelper.GetUserIdFromToken();
         await _communityService.SubscribeToCommunity(await userId, id);
         return Ok();
     }
@@ -123,7 +130,7 @@ public class CommunityController : ControllerBase
     [ProducesResponseType(typeof(ErrorDTO), 500)]
     public async Task<IActionResult> Unsubcribe(Guid id)
     {
-        var userId = _tokenMiddlwareHelper.GetUserIdFromToken();
+        var userId = _tokenHelper.GetUserIdFromToken();
         await _communityService.UnsubscribeFromCommunity(await userId, id);
         return Ok();
     }
